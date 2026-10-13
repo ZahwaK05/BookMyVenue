@@ -1,0 +1,12 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "PGHOST": "bookmyvenue-db-mz.postgres.database.azure.com",
+    "PGPORT": "5432",
+    "PGDATABASE": "bookyvenue",
+    "PGUSER": "manas",
+    "PGPASSWORD": "YOUR_PASSWORD"
+  }
+}

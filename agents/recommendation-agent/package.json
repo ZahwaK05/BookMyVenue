@@ -1,0 +1,14 @@
+{
+  "name": "bookmyvenue-recommendation-agent",
+  "version": "1.0.0",
+  "description": "Venue Recommendation Agent (Azure Function) for BookMyVenue",
+  "main": "src/functions/*.js",
+  "scripts": {
+    "start": "func start",
+    "test": "node test/parser.test.js"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.0.0",
+    "pg": "^8.11.0"
+  }
+}

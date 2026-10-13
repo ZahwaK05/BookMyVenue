@@ -1,0 +1,13 @@
+{
+  "name": "bookmyvenue-security-agent",
+  "version": "1.0.0",
+  "description": "AI Security Agent (Azure Function) for BookMyVenue: fixed explainable rules, XAI log",
+  "main": "src/functions/*.js",
+  "scripts": {
+    "start": "func start"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.0.0",
+    "pg": "^8.11.0"
+  }
+}
