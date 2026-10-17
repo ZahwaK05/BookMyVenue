@@ -22,7 +22,7 @@
  *   }] }
  */
 
-import { admin } from '../api';
+import { admin, venues } from '../api';
 
 // ─── State→UI Enum Mappings ──────────────────────────────────────────────────
 
@@ -130,7 +130,17 @@ function deriveCurrentOccupant(occupancyState, upcomingSchedule, occupancy_count
  * @param {Array} rows  Raw rows from GET /admin/twin
  * @returns {import('../types/digitalTwin').CampusTwinGraph}
  */
-function buildCampusGraph(rows) {
+function buildCampusGraph(rows, venueMeta = []) {
+  // Build lookup map for venue amenities
+  const venueAmenitiesMap = new Map();
+  if (Array.isArray(venueMeta)) {
+    venueMeta.forEach((v) => {
+      if (v.id && Array.isArray(v.amenities)) {
+        venueAmenitiesMap.set(v.id, v.amenities);
+      }
+    });
+  }
+
   // Aggregate into block → floor → venue hierarchy using Maps for deduplication
   const blocksMap = new Map();
 
@@ -191,6 +201,15 @@ function buildCampusGraph(rows) {
       parseInt(occupancy_count, 10) || 0
     );
 
+    const rawAmenities = venueAmenitiesMap.get(venue_id) || [];
+    const mappedAmenities = rawAmenities.map((a) => ({
+      id: a.id,
+      name: a.name,
+      health: 'FUNCTIONAL',
+      type: 'amenity',
+      lastInspectedAt: row.last_updated || new Date().toISOString(),
+    }));
+
     floor.venues.push({
       id: venue_id,
       code: venue_name || venue_id,   // Use venue_name as code for display; id is UUID
@@ -202,7 +221,7 @@ function buildCampusGraph(rows) {
       operationalStatus,
       occupancyState,
       healthScore,
-      amenities: [],  // v_campus_twin does not return per-amenity rows; issues tracker covers this
+      amenities: mappedAmenities,
       currentOccupant,
       upcomingSchedule,
       openIssuesCount: parseInt(open_issues, 10) || 0,
@@ -283,11 +302,14 @@ function buildCampusGraph(rows) {
  * @returns {Promise<import('../types/digitalTwin').CampusTwinGraph|null>}
  */
 export async function getCampusTwinGraph() {
-  const rows = await admin.twin();
+  const [rows, venueMeta] = await Promise.all([
+    admin.twin(),
+    venues.list().catch(() => []),
+  ]);
   if (!Array.isArray(rows) || rows.length === 0) {
     return null;
   }
-  return buildCampusGraph(rows);
+  return buildCampusGraph(rows, venueMeta);
 }
 
 /**

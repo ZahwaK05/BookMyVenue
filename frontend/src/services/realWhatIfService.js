@@ -98,13 +98,27 @@ export const REAL_SIMULATION_PRESETS = [
  */
 function parseBookingRange(range) {
   if (!range) return { startTime: '--:--', endTime: '--:--' };
-  const parts = range.split(/[–—-]{1,3}/); // en-dash, em-dash, or hyphen
-  const start = (parts[0] || '').trim();
-  const end = (parts[1] || '').trim();
-  return {
-    startTime: start.length >= 16 ? start.slice(11, 16) : start,
-    endTime: end.length >= 16 ? end.slice(11, 16) : end,
-  };
+  // PostgreSQL tsrange format: ["2026-10-14 09:00:00","2026-10-14 11:00:00")
+  const tsMatch = range.match(/[\[\(]"?([^",]+)"?,\s*"?([^",\)]+)"?[\]\)]/);
+  if (tsMatch) {
+    const startStr = tsMatch[1].trim();
+    const endStr = tsMatch[2].trim();
+    return {
+      startTime: startStr.length >= 16 ? startStr.slice(11, 16) : startStr,
+      endTime: endStr.length >= 16 ? endStr.slice(11, 16) : endStr,
+    };
+  }
+  // Fallback for dash-separated or 'to' strings: "2026-10-14T09:00 – 2026-10-14T11:00"
+  const parts = range.split(/\s+[–—]\s+|\s+to\s+/i);
+  if (parts.length >= 2) {
+    const start = parts[0].trim();
+    const end = parts[1].trim();
+    return {
+      startTime: start.length >= 16 ? start.slice(11, 16) : start,
+      endTime: end.length >= 16 ? end.slice(11, 16) : end,
+    };
+  }
+  return { startTime: range.slice(0, 16), endTime: '--:--' };
 }
 
 /**

@@ -125,9 +125,14 @@ export default function CampusNavbar() {
               🔮 What-If
             </NavLink>
             {isAdmin && (
-              <NavLink to="/admin" className={navLinkClass}>
-                🛡️ Admin
-              </NavLink>
+              <>
+                <NavLink to="/security" className={navLinkClass}>
+                  🚨 Security XAI
+                </NavLink>
+                <NavLink to="/admin" className={navLinkClass}>
+                  🛡️ Admin
+                </NavLink>
+              </>
             )}
           </nav>
 

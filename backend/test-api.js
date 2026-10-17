@@ -1,6 +1,7 @@
 // test-api.js
 // Automated End-to-End API verification suite for BookMyVenue
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 const { app, server } = require('./index');
 const pool = require('./db/pool');
 

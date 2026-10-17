@@ -37,15 +37,33 @@ Tracking progress across Phase A (Backend), Phase B (Frontend Integration & UI),
 - [x] Updated `WhatIfContext.jsx`: switched from `mockWhatIfService` → `realWhatIfService`. No UI changes.
 - [x] All existing pages and components preserved unchanged (AuthContext, CampusVenuesPage, MyBookingsPage, ApprovalsQueuePage, RecommendationPage, AdminDashboard).
 
-**Assumptions / notes:**
-- `v_campus_twin` does not return per-amenity rows; `amenities: []` for each venue in the Digital Twin view (issue count from `open_issues` column still shown).
-- `DEMAND_SURGE` scenario type is not supported by the live backend; the real What-If service throws a descriptive error which WhatIfContext surfaces as `error` state.
-- `suggested_venue` in whatif detail rows is treated as a venue name string (not a UUID); displayed as-is in the reallocation card.
-- Temporal modes (`current` / `predicted` / `historical`) from the UI time-picker call the same `GET /admin/twin` endpoint — the DB always returns live state; UI will show the same data regardless of mode selection (this is a live system, not a simulation).
+### Runtime Verification & Frontend Hardening (Steps 1–5) ✅
+
+- [x] **STEP 1 - Runtime Verification**:
+  - Live PostgreSQL view `v_campus_twin` verified: 13 venue rows across 4 campus blocks and 3 floors.
+  - Stored procedures verified live on Azure: `whatif_venue_closure`, `whatif_block_closure`, `whatif_amenity_failure` (all returned HTTP 200 with summary and details without errors).
+  - Fixed TSRANGE parser in `realWhatIfService.js`: handles PostgreSQL `["YYYY-MM-DD HH:MM:SS", ...)` range string format cleanly.
+  - Enriched Digital Twin venue nodes with live amenities via `apiVenues.list()`.
+  - Fixed block floor selection in `DigitalTwinContext.jsx` to dynamically target the block's first floor (e.g. Floor 1) rather than hardcoded floor 0.
+- [x] **STEP 2 - What-If UX Enhancements**:
+  - Replaced raw UUID inputs and static options in `ScenarioBuilderForm.jsx` with dynamic cascading dropdowns (`Block` → `Venue` → `Amenity`) populated from live endpoints (`/blocks`, `/venues`, `/amenities`).
+  - Added native date picker `<input type="date">`.
+  - Updated `ScenarioPresets.jsx` to dynamically inject live block and venue UUIDs on click.
+  - Dynamic `CampusDeltaHeatmap.jsx` rendering actual campus blocks (Block A, B, C, D) instead of static demo codes.
+- [x] **STEP 3 - AI Security (XAI) Dashboard**:
+  - Created dedicated admin-only [`SecurityDashboardPage.jsx`](file:///c:/Users/zahwa/Downloads/BookMyVenue/frontend/src/components/SecurityDashboardPage.jsx) mounted at `/security` and `/admin/security`.
+  - Displays flagged bookings, rule names, severity risk badges (High, Medium, Low), and Explainable AI (XAI) rationale blocks.
+  - Interactive "Trigger Heuristic Scan" (`POST /admin/security/scan`) and flag review/dismissal actions (`PATCH /admin/security/flags/:id`).
+  - Added dedicated "🚨 Security XAI" link to `CampusNavbar.jsx` for Dean/Admin users only.
+- [x] **STEP 4 - Venue Issue Reporting UI**:
+  - Verified `VenueDetailPage.jsx` includes modal issue reporting (`POST /issues`) for any authenticated user.
+  - Displays open/resolved defect history and allows Admin / designated Block Heads to mark defects resolved (`PATCH /issues/:id/resolve`).
+- [x] **STEP 5 - UI Polish**:
+  - Added interactive password show/hide visibility toggles (👁️ / 🙈) to both `LoginPage.jsx` and `SignupPage.jsx`.
 
 ---
 
 ## Phase C: Documentation & Handoff
 
-### Status: Pending Phase B completion
+### Status: In Progress
 

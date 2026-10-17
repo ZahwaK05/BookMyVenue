@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 
 if (!process.env.JWT_SECRET) {
   console.error('JWT_SECRET is missing from .env, refusing to start');

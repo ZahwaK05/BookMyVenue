@@ -2,6 +2,8 @@
 // Shared PostgreSQL connection pool. Reads DATABASE_URL from .env
 // (the same Azure connection string you already used to run schema.sql).
 
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 const { Pool } = require('pg');
 
 if (!process.env.DATABASE_URL) {

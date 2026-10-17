@@ -1,19 +1,115 @@
 /**
  * @file ScenarioBuilderForm.jsx
- * @description Form allowing administrators to configure custom hypothetical campus disruptions.
+ * @description Dynamic What-If configuration form with cascading dropdowns
+ * (Block -> Venue -> Amenity) populated from live campus API endpoints.
  */
 
+import { useState, useEffect } from 'react';
 import { useWhatIfSimulation } from '../../context/WhatIfContext';
+import { blocks as apiBlocks, venues as apiVenues, amenities as apiAmenities } from '../../api';
 
 const SCENARIO_TYPES = [
-  { id: 'BLOCK_UNAVAILABLE', label: '🏢 Block Outage', blurb: 'Complete building closure or power cutoff' },
-  { id: 'VENUE_UNAVAILABLE', label: '🚪 Room Closure', blurb: 'Specific classroom or hall shutdown' },
-  { id: 'AMENITY_FAILURE', label: '🛠️ Equipment Failure', blurb: 'Projector, audio, or AC defect in room' },
-  { id: 'DEMAND_SURGE', label: '📈 Demand Surge', blurb: 'Unplanned requirement for multiple rooms' },
+  { id: 'VENUE_UNAVAILABLE', label: '🚪 Venue Closure', blurb: 'Simulate single classroom or hall shutdown' },
+  { id: 'BLOCK_UNAVAILABLE', label: '🏢 Block Closure', blurb: 'Complete building closure or power cutoff' },
+  { id: 'AMENITY_FAILURE', label: '🛠️ Equipment Failure', blurb: 'Projector, audio, or AC defect in venue' },
 ];
 
 export default function ScenarioBuilderForm() {
   const { scenarioDraft, setDraftField, runSimulation, simulationState } = useWhatIfSimulation();
+
+  const [blocksList, setBlocksList] = useState([]);
+  const [venuesList, setVenuesList] = useState([]);
+  const [amenitiesList, setAmenitiesList] = useState([]);
+  const [loadingMeta, setLoadingMeta] = useState(true);
+
+  // Filter venue selection by block
+  const [selectedBlockFilter, setSelectedBlockFilter] = useState('');
+
+  // Fetch campus metadata from live backend
+  useEffect(() => {
+    let isCancelled = false;
+    async function loadCampusMeta() {
+      try {
+        setLoadingMeta(true);
+        const [blks, vens, amens] = await Promise.all([
+          apiBlocks.list().catch(() => []),
+          apiVenues.list().catch(() => []),
+          apiAmenities.list().catch(() => []),
+        ]);
+
+        if (isCancelled) return;
+        setBlocksList(blks || []);
+        setVenuesList(vens || []);
+        setAmenitiesList(amens || []);
+
+        // Initialize default scope if empty or not a valid UUID
+        const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!UUID_REGEX.test(scenarioDraft.scopeId || '')) {
+          if (scenarioDraft.type === 'BLOCK_UNAVAILABLE' && blks?.length > 0) {
+            setDraftField('scopeId', blks[0].id);
+            setDraftField('scopeLabel', blks[0].name);
+          } else if (vens?.length > 0) {
+            setDraftField('scopeId', vens[0].id);
+            setDraftField('scopeLabel', `${vens[0].name} (${vens[0].block_name || 'Campus'})`);
+            if (amens?.length > 0 && !scenarioDraft.amenityId) {
+              setDraftField('amenityId', amens[0].id);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('[ScenarioBuilderForm] Error loading campus metadata:', err);
+      } finally {
+        if (!isCancelled) setLoadingMeta(false);
+      }
+    }
+    loadCampusMeta();
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
+  // When scenario type changes, ensure valid scopeId for the new type
+  function handleTypeChange(newType) {
+    setDraftField('type', newType);
+    if (newType === 'BLOCK_UNAVAILABLE') {
+      const targetBlock = blocksList.find((b) => b.id === scenarioDraft.scopeId) || blocksList[0];
+      if (targetBlock) {
+        setDraftField('scopeId', targetBlock.id);
+        setDraftField('scopeLabel', targetBlock.name);
+        setDraftField('reason', `Scheduled electrical maintenance and building shutdown for ${targetBlock.name}.`);
+      }
+    } else if (newType === 'VENUE_UNAVAILABLE') {
+      const targetVenue = venuesList.find((v) => v.id === scenarioDraft.scopeId) || venuesList[0];
+      if (targetVenue) {
+        setDraftField('scopeId', targetVenue.id);
+        setDraftField('scopeLabel', `${targetVenue.name} (${targetVenue.block_name})`);
+        setDraftField('reason', `Emergency maintenance in ${targetVenue.name}.`);
+      }
+    } else if (newType === 'AMENITY_FAILURE') {
+      const targetVenue = venuesList.find((v) => v.id === scenarioDraft.scopeId) || venuesList[0];
+      const targetAmenity = amenitiesList.find((a) => a.id === scenarioDraft.amenityId) || amenitiesList[0];
+      if (targetVenue) {
+        setDraftField('scopeId', targetVenue.id);
+        if (targetAmenity) {
+          setDraftField('amenityId', targetAmenity.id);
+          setDraftField('scopeLabel', `${targetVenue.name} — ${targetAmenity.name} Failure`);
+          setDraftField('reason', `Hardware failure: ${targetAmenity.name} defective in ${targetVenue.name}.`);
+        } else {
+          setDraftField('scopeLabel', `${targetVenue.name} — Equipment Defect`);
+        }
+      }
+    }
+  }
+
+  // Filtered venues based on block filter
+  const filteredVenues = selectedBlockFilter
+    ? venuesList.filter((v) => v.block_id === selectedBlockFilter || v.block_name === selectedBlockFilter)
+    : venuesList;
+
+  // Available amenities: prefer venue's specific amenities if present, else campus amenities catalog
+  const currentVenue = venuesList.find((v) => v.id === scenarioDraft.scopeId);
+  const availableAmenities =
+    currentVenue?.amenities?.length > 0 ? currentVenue.amenities : amenitiesList;
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -38,14 +134,14 @@ export default function ScenarioBuilderForm() {
         <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
           1. Select Disruption Type
         </label>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           {SCENARIO_TYPES.map((t) => {
             const isSelected = scenarioDraft.type === t.id;
             return (
               <button
                 type="button"
                 key={t.id}
-                onClick={() => setDraftField('type', t.id)}
+                onClick={() => handleTypeChange(t.id)}
                 className={`p-3 rounded-lg border text-left transition ${
                   isSelected
                     ? 'border-slate-900 bg-slate-900 text-white shadow-xs'
@@ -62,134 +158,140 @@ export default function ScenarioBuilderForm() {
         </div>
       </div>
 
-      {/* 2. Target Scope Details */}
-      <div className="bg-stone-50 p-3.5 rounded-lg border border-stone-200 space-y-3 text-xs">
+      {/* 2. Target Scope Details (Cascading Block -> Venue -> Amenity Dropdowns) */}
+      <div className="bg-stone-50 p-4 rounded-xl border border-stone-200 space-y-3.5 text-xs">
         <label className="block font-bold text-slate-700 uppercase tracking-wider">
-          2. Target Infrastructure Scope
+          2. Target Infrastructure Scope (Live Campus Data)
         </label>
 
-        {scenarioDraft.type === 'BLOCK_UNAVAILABLE' && (
-          <div>
-            <label className="block font-medium text-slate-600 mb-1">Target Campus Block</label>
-            <select
-              value={scenarioDraft.scopeId}
-              onChange={(e) => {
-                setDraftField('scopeId', e.target.value);
-                setDraftField('scopeLabel', `Academic Block (${e.target.value})`);
-              }}
-              className="w-full border border-stone-300 rounded-lg p-2.5 bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-amber-500"
-            >
-              <option value="AB1">Academic Block 1 (AB1 - 4 Floors, 11 Venues)</option>
-              <option value="AB2">Academic Block 2 (AB2 - 3 Floors, 8 Venues)</option>
-              <option value="MB">Mechanical Block (MB - 2 Floors, 5 Venues)</option>
-              <option value="CIR">Corporate & Industry Relations (CIR - 2 Floors, 4 Venues)</option>
-            </select>
-          </div>
-        )}
-
-        {(scenarioDraft.type === 'VENUE_UNAVAILABLE' || scenarioDraft.type === 'AMENITY_FAILURE') && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block font-medium text-slate-600 mb-1">Target Room Code</label>
-              <select
-                value={scenarioDraft.scopeId}
-                onChange={(e) => {
-                  setDraftField('scopeId', e.target.value);
-                  setDraftField('scopeLabel', `Room ${e.target.value}`);
-                }}
-                className="w-full border border-stone-300 rounded-lg p-2.5 bg-white text-slate-800 focus:outline-none"
-              >
-                <option value="AB1-204">AB1-204 (Classroom, Cap: 60 - Has Proj Issue)</option>
-                <option value="AB1-101">AB1-101 (Classroom, Cap: 60)</option>
-                <option value="AB1-Seminar-1">AB1-Seminar-1 (Seminar Hall, Cap: 150)</option>
-                <option value="CIR-Auditorium">CIR-Auditorium (Central Auditorium, Cap: 400)</option>
-                <option value="AB2-Conf-1">AB2-Conf-1 (Conference Hall, Cap: 80)</option>
-                <option value="MB-001">MB-001 (Advanced Manufacturing Studio, Cap: 60)</option>
-              </select>
-            </div>
-
-            {scenarioDraft.type === 'AMENITY_FAILURE' && (
+        {loadingMeta ? (
+          <p className="text-stone-400 italic py-2">Loading campus blocks, venues, and amenities…</p>
+        ) : (
+          <>
+            {/* Scenario: BLOCK CLOSURE */}
+            {scenarioDraft.type === 'BLOCK_UNAVAILABLE' && (
               <div>
-                <label className="block font-medium text-slate-600 mb-1">Failed Amenity Type</label>
+                <label className="block font-medium text-slate-700 mb-1">Target Campus Block</label>
                 <select
-                  defaultValue="Projector"
-                  className="w-full border border-stone-300 rounded-lg p-2.5 bg-white text-slate-800 focus:outline-none"
+                  value={scenarioDraft.scopeId}
+                  onChange={(e) => {
+                    const blk = blocksList.find((b) => b.id === e.target.value);
+                    setDraftField('scopeId', e.target.value);
+                    setDraftField('scopeLabel', blk ? blk.name : 'Selected Block');
+                    setDraftField('reason', `Scheduled electrical maintenance and building shutdown for ${blk?.name || 'block'}.`);
+                  }}
+                  className="w-full border border-stone-300 rounded-lg p-2.5 bg-white text-slate-800 font-medium focus:outline-none focus:ring-1 focus:ring-amber-500"
                 >
-                  <option value="Projector">4K Laser Projector Unit</option>
-                  <option value="Audio System">JBL Wireless Audio Array</option>
-                  <option value="Air Conditioning">Centralized AC Unit</option>
-                  <option value="Podium Mic">Podium Microphone Rig</option>
+                  <option value="">-- Choose a Campus Block --</option>
+                  {blocksList.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}
+                    </option>
+                  ))}
                 </select>
               </div>
             )}
-          </div>
-        )}
 
-        {scenarioDraft.type === 'DEMAND_SURGE' && (
-          <div className="grid grid-cols-3 gap-2">
-            <div>
-              <label className="block font-medium text-slate-600 mb-1">Surge Venue Type</label>
-              <select
-                value={scenarioDraft.surgeParams?.venueType || 'classroom'}
-                onChange={(e) =>
-                  setDraftField('surgeParams', { ...scenarioDraft.surgeParams, venueType: e.target.value })
-                }
-                className="w-full border border-stone-300 rounded-lg p-2 bg-white"
-              >
-                <option value="classroom">Classrooms</option>
-                <option value="hall">Seminar Halls</option>
-                <option value="lab">Computer Labs</option>
-              </select>
-            </div>
+            {/* Scenario: VENUE CLOSURE or AMENITY FAILURE */}
+            {(scenarioDraft.type === 'VENUE_UNAVAILABLE' || scenarioDraft.type === 'AMENITY_FAILURE') && (
+              <div className="space-y-3">
+                {/* Optional Block Filter */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-medium text-slate-600 mb-1">Filter by Block (Optional)</label>
+                    <select
+                      value={selectedBlockFilter}
+                      onChange={(e) => setSelectedBlockFilter(e.target.value)}
+                      className="w-full border border-stone-300 rounded-lg p-2 bg-white text-slate-800 focus:outline-none"
+                    >
+                      <option value="">All Academic Blocks</option>
+                      {blocksList.map((b) => (
+                        <option key={b.id} value={b.id}>
+                          {b.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-            <div>
-              <label className="block font-medium text-slate-600 mb-1">Needed Rooms</label>
-              <input
-                type="number"
-                min="1"
-                max="10"
-                value={scenarioDraft.surgeParams?.neededCount || 3}
-                onChange={(e) =>
-                  setDraftField('surgeParams', {
-                    ...scenarioDraft.surgeParams,
-                    neededCount: parseInt(e.target.value, 10) || 1,
-                  })
-                }
-                className="w-full border border-stone-300 rounded-lg p-2 bg-white"
-              />
-            </div>
+                  <div>
+                    <label className="block font-medium text-slate-700 mb-1">Target Venue *</label>
+                    <select
+                      value={scenarioDraft.scopeId}
+                      onChange={(e) => {
+                        const ven = venuesList.find((v) => v.id === e.target.value);
+                        setDraftField('scopeId', e.target.value);
+                        if (ven) {
+                          setDraftField('scopeLabel', `${ven.name} (${ven.block_name})`);
+                          // If amenity failure, pick first amenity of this venue if available
+                          if (scenarioDraft.type === 'AMENITY_FAILURE') {
+                            const firstAm = ven.amenities?.[0] || amenitiesList[0];
+                            if (firstAm) {
+                              setDraftField('amenityId', firstAm.id);
+                              setDraftField('reason', `Hardware defect in ${firstAm.name} inside ${ven.name}.`);
+                            }
+                          } else {
+                            setDraftField('reason', `Emergency maintenance / room shutdown for ${ven.name}.`);
+                          }
+                        }
+                      }}
+                      className="w-full border border-stone-300 rounded-lg p-2 bg-white text-slate-800 font-medium focus:outline-none"
+                    >
+                      <option value="">-- Choose a Venue --</option>
+                      {filteredVenues.map((v) => (
+                        <option key={v.id} value={v.id}>
+                          {v.name} ({v.block_name} • Cap: {v.capacity} • {v.type})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
 
-            <div>
-              <label className="block font-medium text-slate-600 mb-1">Min Capacity</label>
-              <input
-                type="number"
-                min="20"
-                step="10"
-                value={scenarioDraft.surgeParams?.minCapacity || 60}
-                onChange={(e) =>
-                  setDraftField('surgeParams', {
-                    ...scenarioDraft.surgeParams,
-                    minCapacity: parseInt(e.target.value, 10) || 40,
-                  })
-                }
-                className="w-full border border-stone-300 rounded-lg p-2 bg-white"
-              />
-            </div>
-          </div>
+                {/* Amenity Picker for AMENITY_FAILURE */}
+                {scenarioDraft.type === 'AMENITY_FAILURE' && (
+                  <div>
+                    <label className="block font-medium text-slate-700 mb-1">Failing Equipment / Amenity *</label>
+                    <select
+                      value={scenarioDraft.amenityId || ''}
+                      onChange={(e) => {
+                        const am = availableAmenities.find((a) => a.id === e.target.value);
+                        setDraftField('amenityId', e.target.value);
+                        if (am) {
+                          setDraftField(
+                            'scopeLabel',
+                            `${currentVenue?.name || 'Venue'} — ${am.name} Defect`
+                          );
+                          setDraftField('reason', `Reported failure in ${am.name}. Multimedia / facility unavailable.`);
+                        }
+                      }}
+                      className="w-full border border-stone-300 rounded-lg p-2.5 bg-white text-slate-800 font-medium focus:outline-none"
+                    >
+                      <option value="">-- Choose Failing Amenity --</option>
+                      {availableAmenities.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+            )}
+          </>
         )}
       </div>
 
-      {/* 3. Time Window */}
+      {/* 3. Time Window & Date Picker */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
         <div>
           <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
-            Date
+            Simulation Date *
           </label>
           <input
             type="date"
-            value={scenarioDraft.targetDate}
+            value={scenarioDraft.targetDate || ''}
             onChange={(e) => setDraftField('targetDate', e.target.value)}
-            className="w-full border border-stone-300 rounded-lg p-2.5 text-slate-800"
+            className="w-full border border-stone-300 rounded-lg p-2.5 text-slate-800 font-medium bg-white focus:outline-none focus:ring-1 focus:ring-amber-500"
+            required
           />
         </div>
 
@@ -199,9 +301,9 @@ export default function ScenarioBuilderForm() {
           </label>
           <input
             type="time"
-            value={scenarioDraft.startTime}
+            value={scenarioDraft.startTime || '09:00'}
             onChange={(e) => setDraftField('startTime', e.target.value)}
-            className="w-full border border-stone-300 rounded-lg p-2.5 text-slate-800"
+            className="w-full border border-stone-300 rounded-lg p-2.5 text-slate-800 bg-white"
           />
         </div>
 
@@ -211,9 +313,9 @@ export default function ScenarioBuilderForm() {
           </label>
           <input
             type="time"
-            value={scenarioDraft.endTime}
+            value={scenarioDraft.endTime || '17:00'}
             onChange={(e) => setDraftField('endTime', e.target.value)}
-            className="w-full border border-stone-300 rounded-lg p-2.5 text-slate-800"
+            className="w-full border border-stone-300 rounded-lg p-2.5 text-slate-800 bg-white"
           />
         </div>
       </div>
@@ -221,14 +323,14 @@ export default function ScenarioBuilderForm() {
       {/* 4. Rationale */}
       <div className="text-xs">
         <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
-          Operational Rationale / Context
+          Operational Context / Disruption Reason
         </label>
         <input
           type="text"
-          value={scenarioDraft.reason}
+          value={scenarioDraft.reason || ''}
           onChange={(e) => setDraftField('reason', e.target.value)}
-          placeholder="e.g. Scheduled electrical transformer overhaul, fumigation, or chiller repair"
-          className="w-full border border-stone-300 rounded-lg p-2.5 text-slate-800"
+          placeholder="e.g. Electrical transformer overhaul, HVAC maintenance, or projector optical defect"
+          className="w-full border border-stone-300 rounded-lg p-2.5 text-slate-800 bg-white"
         />
       </div>
 
@@ -236,7 +338,7 @@ export default function ScenarioBuilderForm() {
       <div className="pt-2">
         <button
           type="submit"
-          disabled={isSimulating}
+          disabled={isSimulating || loadingMeta || !scenarioDraft.scopeId}
           className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-amber-400 font-bold text-sm rounded-lg transition shadow-xs flex items-center justify-center gap-2 disabled:opacity-60"
         >
           {isSimulating ? (
@@ -254,4 +356,3 @@ export default function ScenarioBuilderForm() {
     </form>
   );
 }
-

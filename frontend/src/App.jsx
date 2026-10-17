@@ -16,6 +16,7 @@ import RecommendationPage from "./components/RecommendationPage";
 import MyBookingsPage from "./components/MyBookingsPage";
 import ApprovalsQueuePage from "./components/ApprovalsQueuePage";
 import AdminDashboard from "./components/AdminDashboard";
+import SecurityDashboardPage from "./components/SecurityDashboardPage";
 import { DigitalTwinProvider } from "./context/DigitalTwinContext";
 import { WhatIfProvider } from "./context/WhatIfContext";
 import DigitalTwinDashboard from "./components/digitalTwin/DigitalTwinDashboard";
@@ -71,8 +72,10 @@ function App() {
               <Route path="/my-bookings" element={<MyBookingsPage />} />
               <Route path="/approvals" element={<ApprovalsQueuePage />} />
 
-              {/* Admin Suite */}
+              {/* Admin Suite & AI Security Dashboard */}
               <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/security" element={<SecurityDashboardPage />} />
+              <Route path="/admin/security" element={<SecurityDashboardPage />} />
 
               {/* Authentication */}
               <Route path="/signup" element={<SignupRoute />} />

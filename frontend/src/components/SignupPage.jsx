@@ -28,6 +28,7 @@ export default function SignupPage({ onSubmit }) {
   });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   function update(field, value) {
     setForm((f) => ({ ...f, [field]: value }));
@@ -147,22 +148,42 @@ export default function SignupPage({ onSubmit }) {
 
             <div className="grid grid-cols-2 gap-4">
               <Field label="Password" error={errors.password}>
-                <input
-                  type="password"
-                  value={form.password}
-                  onChange={(e) => update("password", e.target.value)}
-                  className={inputClass(errors.password)}
-                  autoComplete="new-password"
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={form.password}
+                    onChange={(e) => update("password", e.target.value)}
+                    className={inputClass(errors.password) + " pr-9"}
+                    autoComplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((p) => !p)}
+                    className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-xs text-stone-400 hover:text-stone-700 transition"
+                    title={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? "🙈" : "👁️"}
+                  </button>
+                </div>
               </Field>
               <Field label="Confirm" error={errors.confirmPassword}>
-                <input
-                  type="password"
-                  value={form.confirmPassword}
-                  onChange={(e) => update("confirmPassword", e.target.value)}
-                  className={inputClass(errors.confirmPassword)}
-                  autoComplete="new-password"
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={form.confirmPassword}
+                    onChange={(e) => update("confirmPassword", e.target.value)}
+                    className={inputClass(errors.confirmPassword) + " pr-9"}
+                    autoComplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((p) => !p)}
+                    className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-xs text-stone-400 hover:text-stone-700 transition"
+                    title={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? "🙈" : "👁️"}
+                  </button>
+                </div>
               </Field>
             </div>
 

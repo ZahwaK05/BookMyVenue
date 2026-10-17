@@ -98,9 +98,11 @@ export function DigitalTwinProvider({ children }) {
 
   const selectBlock = useCallback(
     (blockCode) => {
-      setSearchParams({ block: blockCode, floor: '0', time: temporalMode });
+      const blk = campusGraph?.blocks.find((b) => b.code === blockCode || b.id === blockCode);
+      const firstFloorNum = blk?.floors?.[0]?.floorNumber ?? 1;
+      setSearchParams({ block: blockCode, floor: firstFloorNum.toString(), time: temporalMode });
     },
-    [setSearchParams, temporalMode]
+    [campusGraph, setSearchParams, temporalMode]
   );
 
   const selectFloor = useCallback(
@@ -145,7 +147,7 @@ export function DigitalTwinProvider({ children }) {
   };
 
   const activeBlock =
-    campusGraph?.blocks.find((b) => b.code === selectedBlockId) || campusGraph?.blocks[0];
+    campusGraph?.blocks.find((b) => b.code === selectedBlockId || b.id === selectedBlockId) || campusGraph?.blocks[0];
   const activeFloor =
     activeBlock?.floors.find((f) => f.floorNumber === selectedFloorNumber) ||
     activeBlock?.floors[0];
@@ -161,7 +163,7 @@ export function DigitalTwinProvider({ children }) {
   const value = {
     campusGraph,
     selectedBlockId,
-    selectedFloorNumber,
+    selectedFloorNumber: activeFloor?.floorNumber ?? selectedFloorNumber,
     selectedVenueId,
     activeBlock,
     activeFloor,
