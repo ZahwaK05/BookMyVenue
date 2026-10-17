@@ -544,7 +544,7 @@ export default function AdminDashboard() {
               </button>
             </div>
 
-            <div className="overflow-x-auto max-h-96">
+            <div className="overflow-x-auto max-h-96" data-lenis-prevent>
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-stone-200 bg-stone-50 text-stone-600 uppercase font-semibold text-[10px]">

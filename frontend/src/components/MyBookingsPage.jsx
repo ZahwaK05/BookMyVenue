@@ -211,7 +211,7 @@ export default function MyBookingsPage() {
               </button>
             </div>
 
-            <div className="overflow-y-auto flex-1 pr-1 space-y-4">
+            <div className="overflow-y-auto flex-1 pr-1 space-y-4" data-lenis-prevent>
               {historyLoading ? (
                 <p className="text-xs text-stone-500 font-mono text-center py-6">
                   Fetching audit records...

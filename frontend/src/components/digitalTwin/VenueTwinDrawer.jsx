@@ -19,7 +19,8 @@ export default function VenueTwinDrawer() {
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-slate-950/50 backdrop-blur-xs flex justify-end transition-opacity">
       <div
-        className="w-full max-w-xl bg-white h-full shadow-2xl flex flex-col justify-between overflow-y-auto animate-in slide-in-from-right duration-200"
+       className="w-full max-w-xl bg-white h-full shadow-2xl flex flex-col justify-between overflow-y-auto animate-in slide-in-from-right duration-200"
+       data-lenis-prevent
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

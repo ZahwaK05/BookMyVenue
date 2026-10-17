@@ -122,14 +122,14 @@ export default function CampusNavbar() {
                     ⚖️ Approvals
                   </NavLink>
                 )}
-                <NavLink to="/digital-twin" className={navLinkClass}>
-                  🌐 Digital Twin
-                </NavLink>
-                <NavLink to="/what-if" className={navLinkClass}>
-                  🔮 What-If
-                </NavLink>
                 {isAdmin && (
                   <>
+                    <NavLink to="/digital-twin" className={navLinkClass}>
+                      🌐 Digital Twin
+                    </NavLink>
+                    <NavLink to="/what-if" className={navLinkClass}>
+                      🔮 What-If
+                    </NavLink>
                     <NavLink to="/security" className={navLinkClass}>
                       🚨 Security XAI
                     </NavLink>

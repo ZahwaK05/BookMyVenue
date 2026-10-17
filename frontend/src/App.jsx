@@ -141,7 +141,7 @@ function App() {
                 }
               />
 
-              {/* Protected Admin Suite & AI Security Dashboard (Admin Only) */}
+              {/* Admin-only: Admin Suite, Security XAI, Digital Twin, What-If */}
               <Route
                 path="/admin"
                 element={
@@ -166,12 +166,10 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-
-              {/* Protected Advanced Modules: Digital Twin & What-If */}
               <Route
                 path="/digital-twin"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute adminOnly>
                     <DigitalTwinRoute />
                   </ProtectedRoute>
                 }
@@ -179,7 +177,7 @@ function App() {
               <Route
                 path="/what-if"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute adminOnly>
                     <WhatIfRoute />
                   </ProtectedRoute>
                 }
