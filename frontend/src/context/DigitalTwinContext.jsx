@@ -9,8 +9,8 @@ import { useSearchParams } from 'react-router-dom';
 import {
   getCampusTwinGraph,
   submitVenueIssueReport,
-  subscribeMockTwinEvents,
-} from '../services/mockDigitalTwinService';
+  subscribeTwinEvents,
+} from '../services/realDigitalTwinService';
 
 const DigitalTwinContext = createContext(null);
 
@@ -123,9 +123,9 @@ export function DigitalTwinProvider({ children }) {
     [searchParams, setSearchParams]
   );
 
-  // Real-time simulated telemetry sync listener
+  // Real-time telemetry sync listener — polls the live twin every 30 s
   useEffect(() => {
-    const unsubscribe = subscribeMockTwinEvents((evt) => {
+    const unsubscribe = subscribeTwinEvents((evt) => {
       setCampusGraph((prev) => {
         if (!prev) return prev;
         return {

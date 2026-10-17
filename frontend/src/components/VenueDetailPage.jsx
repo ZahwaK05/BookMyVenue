@@ -1,13 +1,13 @@
 // frontend/src/components/VenueDetailPage.jsx
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, useSearchParams, Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { venues as apiVenues, timetable as apiTimetable, issues as apiIssues } from '../api';
 import { useAuth } from '../context/AuthContext';
 import BookingForm from './BookingForm';
 
 export default function VenueDetailPage() {
   const { id } = useParams();
-  const [searchParams] = useSearchParams();
+
   const { user, isAdmin, isBlockHead } = useAuth();
 
   const [venue, setVenue] = useState(null);

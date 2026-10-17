@@ -21,7 +21,27 @@ Tracking progress across Phase A (Backend), Phase B (Frontend Integration & UI),
 
 ## Phase B: Frontend
 
-### Status: In Progress
+### Status: Complete ✅
+
+**Build**: `npm run build` → ✓ 57 modules, 401 KB JS, 50 KB CSS, 702ms — 0 errors.
+
+**Lint**: 9 remaining `react-hooks/set-state-in-effect` and `react-refresh/only-export-components` errors — **all in intentionally exempted files** (AuthContext, CampusVenuesPage, MyBookingsPage, ApprovalsQueuePage, VenueDetailPage, AdminDashboard). No new errors introduced. Two previously targeted errors fixed.
+
+**Changes completed:**
+- [x] Fixed `BookingForm.jsx`: removed unused `user` from `useAuth()` destructure.
+- [x] Fixed `VenueDetailPage.jsx`: removed unused `searchParams` (import + variable).
+- [x] Deleted `OwnerDashboard.jsx` and `MyBookings.jsx` (old marketplace stubs — confirmed no imports).
+- [x] Created `frontend/src/services/realDigitalTwinService.js`: live adapter calling `GET /admin/twin`, transforms flat `v_campus_twin` rows → nested `CampusTwinGraph` (blocks→floors→venues) with state enum mapping, health score derivation, and upcoming schedule parsing.
+- [x] Created `frontend/src/services/realWhatIfService.js`: live adapter routing `VENUE_UNAVAILABLE`, `BLOCK_UNAVAILABLE`, `AMENITY_FAILURE` to the corresponding `admin.whatifVenue/Block/Amenity()` endpoints and transforming `{ summary, details }` → `SimulationResultReport` shape.
+- [x] Updated `DigitalTwinContext.jsx`: switched from `mockDigitalTwinService` → `realDigitalTwinService`. No UI changes.
+- [x] Updated `WhatIfContext.jsx`: switched from `mockWhatIfService` → `realWhatIfService`. No UI changes.
+- [x] All existing pages and components preserved unchanged (AuthContext, CampusVenuesPage, MyBookingsPage, ApprovalsQueuePage, RecommendationPage, AdminDashboard).
+
+**Assumptions / notes:**
+- `v_campus_twin` does not return per-amenity rows; `amenities: []` for each venue in the Digital Twin view (issue count from `open_issues` column still shown).
+- `DEMAND_SURGE` scenario type is not supported by the live backend; the real What-If service throws a descriptive error which WhatIfContext surfaces as `error` state.
+- `suggested_venue` in whatif detail rows is treated as a venue name string (not a UUID); displayed as-is in the reallocation card.
+- Temporal modes (`current` / `predicted` / `historical`) from the UI time-picker call the same `GET /admin/twin` endpoint — the DB always returns live state; UI will show the same data regardless of mode selection (this is a live system, not a simulation).
 
 ---
 

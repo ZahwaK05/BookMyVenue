@@ -6,18 +6,19 @@
 
 import { createContext, useContext, useState, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { runWhatIfSimulation, MOCK_SIMULATION_PRESETS } from '../services/mockWhatIfService';
+import { runWhatIfSimulation, REAL_SIMULATION_PRESETS } from '../services/realWhatIfService';
 
 const WhatIfContext = createContext(null);
 
 const DEFAULT_SCENARIO_DRAFT = {
-  type: 'BLOCK_UNAVAILABLE',
-  scopeId: 'AB1',
-  scopeLabel: 'Academic Block 1 (AB1)',
+  type: 'VENUE_UNAVAILABLE',
+  scopeId: '',
+  scopeLabel: 'Select a venue or block…',
   targetDate: new Date().toISOString().split('T')[0],
-  startTime: '10:00',
-  endTime: '14:00',
-  reason: 'Scheduled electrical transformer maintenance and power cutoff.',
+  startTime: '09:00',
+  endTime: '17:00',
+  reason: '',
+  amenityId: '',
   surgeParams: {
     venueType: 'classroom',
     neededCount: 3,
@@ -153,7 +154,7 @@ export function WhatIfProvider({ children }) {
     simulationResults,
     error,
     reallocationDecisions,
-    presets: MOCK_SIMULATION_PRESETS,
+    presets: REAL_SIMULATION_PRESETS,
     setDraftField,
     applyPreset,
     runSimulation: executeSimulation,

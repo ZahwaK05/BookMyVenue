@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 export default function BookingForm({ venue, onSuccess }) {
-  const { user, isFaculty } = useAuth();
+  const { isFaculty } = useAuth();
   const navigate = useNavigate();
 
   const todayStr = new Date().toISOString().slice(0, 10);
