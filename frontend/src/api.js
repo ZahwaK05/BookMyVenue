@@ -56,6 +56,11 @@ async function request(path, { method = 'GET', body, params } = {}) {
 // ------------------------------------------------------------
 export const auth = {
   signup: (payload) => request('/auth/signup', { method: 'POST', body: payload }),
+  signupRequest: (payload) => request('/auth/signup/request', { method: 'POST', body: payload }),
+  signupVerify: ({ email, otp }) =>
+    request('/auth/signup/verify', { method: 'POST', body: { email, otp } }),
+  signupResend: (email) =>
+    request('/auth/signup/resend', { method: 'POST', body: { email } }),
   login: (payload) => request('/auth/login', { method: 'POST', body: payload }),
   me: () => request('/auth/me'),
   logout: () => {

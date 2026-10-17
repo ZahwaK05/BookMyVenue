@@ -53,28 +53,34 @@ export function AuthProvider({ children }) {
     return () => window.removeEventListener('bmv_auth_change', handleAuthChange);
   }, [fetchCurrentUser]);
 
-  const login = async (email, password) => {
-    const res = await apiAuth.login({ email, password });
-    if (res.token && res.user) {
+  const storeSession = (res, label) => {
+    if (res?.token && res?.user) {
       localStorage.setItem('bmv_token', res.token);
       localStorage.setItem('bmv_user', JSON.stringify(res.user));
       setToken(res.token);
       setUser(res.user);
       return res.user;
     }
-    throw new Error('Invalid response from login server');
+    throw new Error(`Invalid response from ${label} server`);
   };
 
+  const login = async (email, password) => {
+    const res = await apiAuth.login({ email, password });
+    return storeSession(res, 'login');
+  };
+
+  // Single-step signup (only works if the backend has OTP_REQUIRED=false)
   const signup = async (payload) => {
     const res = await apiAuth.signup(payload);
-    if (res.token && res.user) {
-      localStorage.setItem('bmv_token', res.token);
-      localStorage.setItem('bmv_user', JSON.stringify(res.user));
-      setToken(res.token);
-      setUser(res.user);
-      return res.user;
-    }
-    throw new Error('Invalid response from signup server');
+    return storeSession(res, 'signup');
+  };
+
+  // OTP signup: step 1 sends the code, step 2 verifies it and logs the user in
+  const requestSignupOtp = (payload) => apiAuth.signupRequest(payload);
+  const resendSignupOtp = (email) => apiAuth.signupResend(email);
+  const verifySignupOtp = async (email, otp) => {
+    const res = await apiAuth.signupVerify({ email, otp });
+    return storeSession(res, 'verification');
   };
 
   const logout = () => {
@@ -95,6 +101,9 @@ export function AuthProvider({ children }) {
     isStudent: user?.role === 'student',
     login,
     signup,
+    requestSignupOtp,
+    resendSignupOtp,
+    verifySignupOtp,
     logout,
     refreshUser: fetchCurrentUser,
   };
@@ -107,4 +116,3 @@ export function useAuth() {
   if (!ctx) throw new Error('useAuth must be used within an AuthProvider');
   return ctx;
 }
-

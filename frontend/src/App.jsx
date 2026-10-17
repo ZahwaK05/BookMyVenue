@@ -42,18 +42,24 @@ function RootRoute() {
 
 function SignupRoute() {
   const navigate = useNavigate();
-  const { user, loading, signup } = useAuth();
+  const { user, loading, requestSignupOtp, verifySignupOtp, resendSignupOtp } = useAuth();
 
   if (!loading && user) {
     return <Navigate to="/venues" replace />;
   }
 
-  async function handleSignup(formData) {
-    await signup(formData);
+  async function handleVerify(email, otp) {
+    await verifySignupOtp(email, otp);
     navigate("/venues");
   }
 
-  return <SignupPage onSubmit={handleSignup} />;
+  return (
+    <SignupPage
+      onRequest={requestSignupOtp}
+      onVerify={handleVerify}
+      onResend={resendSignupOtp}
+    />
+  );
 }
 
 function LoginRoute() {

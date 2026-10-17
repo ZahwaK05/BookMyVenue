@@ -9,6 +9,7 @@ if (!process.env.JWT_SECRET) {
 }
 
 const authRouter = require('./routes/auth');
+const signupOtpRouter = require('./routes/signupOtp');
 const amenitiesRouter = require('./routes/amenities');
 const venuesRouter = require('./routes/venues');
 const usersRouter = require('./routes/users');
@@ -26,6 +27,8 @@ app.use(express.json());
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
+// OTP signup routes must be mounted before the main auth router
+app.use('/auth', signupOtpRouter);
 app.use('/auth', authRouter);
 app.use('/users', usersRouter);
 app.use('/bookings', bookingsRouter);

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import VantaBackground from './common/VantaBackground';
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -40,8 +41,8 @@ function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-100 flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-stone-200 p-8">
+    <VantaBackground className="min-h-screen flex items-center justify-center px-4 py-12">
+      <div className="relative z-10 w-full max-w-md bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border border-white/40 p-8">
         {/* HEADER */}
         <div className="text-center mb-8">
           <img
@@ -131,7 +132,7 @@ function LoginPage() {
           </Link>
         </div>
       </div>
-    </div>
+    </VantaBackground>
   );
 }
 
