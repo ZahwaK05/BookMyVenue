@@ -25,7 +25,7 @@ const EFFECTS = {
   waves: {
     load: () => import('vanta/dist/vanta.waves.min'),
     options: {
-      color: 0x0b1a3a,   // wave colour
+      color: 0x0b1a3a,
       shininess: 35,
       waveHeight: 18,
       waveSpeed: 0.7,
@@ -115,6 +115,7 @@ export default function VantaBackground({ children, className = '' }) {
     }
     const cfg = EFFECTS[EFFECT] || EFFECTS.net;
     let effect = null;
+    let observer = null;
     let cancelled = false;
 
     (async () => {
@@ -135,6 +136,15 @@ export default function VantaBackground({ children, className = '' }) {
           gyroControls: false,
           ...cfg.options,
         });
+
+        // Keep the canvas the same size as the element, even when the
+        // element grows or shrinks after Vanta started.
+        const refit = () => {
+          if (effect && typeof effect.resize === 'function') effect.resize();
+        };
+        observer = new ResizeObserver(refit);
+        observer.observe(ref.current);
+        setTimeout(refit, 300); // once more after fonts/images settle
       } catch (err) {
         console.error('[Vanta] failed to start:', err);
       }
@@ -142,6 +152,7 @@ export default function VantaBackground({ children, className = '' }) {
 
     return () => {
       cancelled = true;
+      if (observer) observer.disconnect();
       if (effect) effect.destroy();
     };
   }, [enabled, state.why]);

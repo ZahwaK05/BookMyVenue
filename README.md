@@ -44,8 +44,17 @@ Designed and built for **Amrita Vishwa Vidyapeetham** as a dual submission for D
 ## 3. Environment Configuration
 
 All sensitive credentials and connection strings are managed strictly via environment variables. **Never commit `.env` files to source control.**
+| Variable | Purpose |
+|---|---|
+| `ADMIN_SIGNUP_CODE` | Registration code required to create an admin account |
+| `OTP_REQUIRED` | Set to `false` only to allow the legacy one-step signup (used by the old test suite) |
+| `SMTP_HOST`, `SMTP_PORT` | Mail server for OTP emails |
+| `SMTP_USER`, `SMTP_PASS` | Mail account credentials (use an app password) |
+| `SMTP_FROM` | Sender shown on OTP emails |
+| `JWT_SECRET` | Secret used to sign and verify JWT authentication tokens |
 
 ### Backend Configuration (`backend/.env`)
+
 Create a `.env` file inside the `backend/` directory:
 
 ```ini

@@ -109,19 +109,27 @@ export default function CampusNavbar() {
                 <NavLink to="/venues" className={navLinkClass}>
                   🏛️ Venues
                 </NavLink>
-                <NavLink to="/recommend" className={navLinkClass}>
-                  ✨ AI Finder
-                </NavLink>
-                {user && (
+
+                {/* Requesters only: students and faculty */}
+                {!isAdmin && (
+                  <NavLink to="/recommend" className={navLinkClass}>
+                    ✨ AI Finder
+                  </NavLink>
+                )}
+                {user && !isAdmin && (
                   <NavLink to="/my-bookings" className={navLinkClass}>
                     📋 My Bookings
                   </NavLink>
                 )}
+
+                {/* Reviewers: block heads and the dean's office */}
                 {(isBlockHead || isAdmin) && (
                   <NavLink to="/approvals" className={navLinkClass}>
                     ⚖️ Approvals
                   </NavLink>
                 )}
+
+                {/* Admin only */}
                 {isAdmin && (
                   <>
                     <NavLink to="/digital-twin" className={navLinkClass}>

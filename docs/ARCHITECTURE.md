@@ -162,3 +162,23 @@ Compared to standard commercial booking systems (e.g., Airbnb, peer-to-peer venu
    - **Recommendation Agent**: Converts ambiguous natural language requests into structured constraints.
    - **Security Agent (XAI)**: Explainable rule-based anomaly detection protecting against rapid reservation-cancellation churn, high volume surges, and slot hoarding.
 
+## Email OTP Signup
+
+New accounts are created in two steps so that every account owns a working email address.
+
+1. `POST /auth/signup/request` validates the form (name, email, password of at least 8 characters, role, and the admin registration code for admins) and rejects duplicate emails. The password is hashed with bcrypt, and a 6-digit one-time code is generated with `crypto.randomInt`. The code is emailed to the user and is never returned by the API.
+2. `POST /auth/signup/verify` checks the code and, if it is correct, creates the user and returns the same `{ token, user }` response as login.
+3. `POST /auth/signup/resend` issues a fresh code for the same pending signup.
+
+Pending signups are held in server memory, not in the database, so the schema is unchanged:
+
+| Rule | Value |
+|---|---|
+| Code lifetime | 5 minutes |
+| Resend cooldown | 30 seconds |
+| Wrong attempts allowed | 5, then the signup must be restarted |
+| Code storage | SHA-256 hash only, compared with `timingSafeEqual` |
+
+Limitations: pending codes are lost if the backend restarts, and they are not shared between multiple server instances. Both are acceptable for a single-instance deployment.
+
+If `SMTP_HOST` is not set, the code is printed to the server console in development, and signup returns "Email service is not configured" in production.
