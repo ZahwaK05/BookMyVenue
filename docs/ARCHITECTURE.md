@@ -161,3 +161,4 @@ Compared to standard commercial booking systems (e.g., Airbnb, peer-to-peer venu
 5. **Dual Autonomous AI Agents**:
    - **Recommendation Agent**: Converts ambiguous natural language requests into structured constraints.
    - **Security Agent (XAI)**: Explainable rule-based anomaly detection protecting against rapid reservation-cancellation churn, high volume surges, and slot hoarding.
+

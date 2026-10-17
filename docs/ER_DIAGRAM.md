@@ -212,3 +212,4 @@ erDiagram
 
 4. **Class Timetable Conflict Checking**:
    Evaluated at reservation time by checking `day_of_week`, `start_time`, and `end_time` against `class_timetable`.
+
