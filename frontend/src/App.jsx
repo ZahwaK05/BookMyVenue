@@ -7,6 +7,7 @@ import {
 } from "react-router-dom";
 
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import ProtectedRoute from "./components/common/ProtectedRoute";
 import SignupPage from "./components/SignupPage";
 import LoginPage from "./components/LoginPage";
 import CampusNavbar from "./components/common/CampusNavbar";
@@ -22,9 +23,30 @@ import { WhatIfProvider } from "./context/WhatIfContext";
 import DigitalTwinDashboard from "./components/digitalTwin/DigitalTwinDashboard";
 import WhatIfDashboard from "./components/whatIf/WhatIfDashboard";
 
+function RootRoute() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-[70vh] flex flex-col items-center justify-center p-8 text-center">
+        <div className="w-10 h-10 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-xs uppercase tracking-wider font-semibold text-stone-500 font-mono">
+          Connecting to Campus Venue Network...
+        </p>
+      </div>
+    );
+  }
+
+  return <Navigate to={user ? "/venues" : "/login"} replace />;
+}
+
 function SignupRoute() {
   const navigate = useNavigate();
-  const { signup } = useAuth();
+  const { user, loading, signup } = useAuth();
+
+  if (!loading && user) {
+    return <Navigate to="/venues" replace />;
+  }
 
   async function handleSignup(formData) {
     await signup(formData);
@@ -35,6 +57,12 @@ function SignupRoute() {
 }
 
 function LoginRoute() {
+  const { user, loading } = useAuth();
+
+  if (!loading && user) {
+    return <Navigate to="/venues" replace />;
+  }
+
   return <LoginPage />;
 }
 
@@ -62,31 +90,103 @@ function App() {
           <CampusNavbar />
           <main className="flex-1">
             <Routes>
-              {/* Home & Discovery */}
-              <Route path="/" element={<Navigate to="/venues" replace />} />
-              <Route path="/venues" element={<CampusVenuesPage />} />
-              <Route path="/venues/:id" element={<VenueDetailPage />} />
+              {/* Home / Login-first routing */}
+              <Route path="/" element={<RootRoute />} />
 
-              {/* AI Agent & Booking Workflows */}
-              <Route path="/recommend" element={<RecommendationPage />} />
-              <Route path="/my-bookings" element={<MyBookingsPage />} />
-              <Route path="/approvals" element={<ApprovalsQueuePage />} />
-
-              {/* Admin Suite & AI Security Dashboard */}
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/security" element={<SecurityDashboardPage />} />
-              <Route path="/admin/security" element={<SecurityDashboardPage />} />
-
-              {/* Authentication */}
+              {/* Public Authentication */}
               <Route path="/signup" element={<SignupRoute />} />
               <Route path="/login" element={<LoginRoute />} />
 
-              {/* Advanced Modules: Digital Twin & What-If */}
-              <Route path="/digital-twin" element={<DigitalTwinRoute />} />
-              <Route path="/what-if" element={<WhatIfRoute />} />
+              {/* Protected Campus Discovery & Details */}
+              <Route
+                path="/venues"
+                element={
+                  <ProtectedRoute>
+                    <CampusVenuesPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/venues/:id"
+                element={
+                  <ProtectedRoute>
+                    <VenueDetailPage />
+                  </ProtectedRoute>
+                }
+              />
 
-              {/* Fallback */}
-              <Route path="*" element={<Navigate to="/venues" replace />} />
+              {/* Protected AI Agent & Booking Workflows */}
+              <Route
+                path="/recommend"
+                element={
+                  <ProtectedRoute>
+                    <RecommendationPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/my-bookings"
+                element={
+                  <ProtectedRoute>
+                    <MyBookingsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/approvals"
+                element={
+                  <ProtectedRoute>
+                    <ApprovalsQueuePage />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Protected Admin Suite & AI Security Dashboard (Admin Only) */}
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute adminOnly>
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/security"
+                element={
+                  <ProtectedRoute adminOnly>
+                    <SecurityDashboardPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/security"
+                element={
+                  <ProtectedRoute adminOnly>
+                    <SecurityDashboardPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Protected Advanced Modules: Digital Twin & What-If */}
+              <Route
+                path="/digital-twin"
+                element={
+                  <ProtectedRoute>
+                    <DigitalTwinRoute />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/what-if"
+                element={
+                  <ProtectedRoute>
+                    <WhatIfRoute />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Fallback to root redirect */}
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </main>
         </div>
