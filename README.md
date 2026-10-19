@@ -133,7 +133,11 @@ npm run build
 
 ---
 
-## 6. Architecture & Documentation Directory
+## 6.LIVE URL
+
+https://bmvwebmz.z29.web.core.windows.net/
+
+## 7. Architecture & Documentation Directory
 
 Detailed technical reports and architectural diagrams are located in the [`docs/`](docs/) directory:
 
