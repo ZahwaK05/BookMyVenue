@@ -144,5 +144,4 @@ Detailed technical reports and architectural diagrams are located in the [`docs/
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — System architecture diagram, booking approval state machine, and novelty breakdown.
 - [`docs/ER_DIAGRAM.md`](docs/ER_DIAGRAM.md) — Complete Mermaid entity-relationship diagram with database constraint definitions.
 - [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) — Comprehensive execution logs and categorization of the 31 integration test cases.
-- [`docs/MANAS_HANDOFF.md`](docs/MANAS_HANDOFF.md) — Teammate handoff contract, What-If output formats, and schema follow-up items.
 - [`docs/PROGRESS.md`](docs/PROGRESS.md) — Detailed implementation audit log across all project milestones.
